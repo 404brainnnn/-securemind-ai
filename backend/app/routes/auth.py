@@ -1,31 +1,36 @@
 from fastapi import APIRouter
-from app.schemas.user_schema import UserSignup, UserLogin
-from app.utils.security import (
-    hash_password,
-    create_access_token
-)
+from pydantic import BaseModel
 
 router = APIRouter()
 
-@router.post("/signup")
-def signup(user: UserSignup):
+fake_db = {}
 
-    hashed_password = hash_password(user.password)
+class User(BaseModel):
+    username: str
+    password: str
+
+@router.post("/signup")
+def signup(user: User):
+
+    if user.username in fake_db:
+        return {
+            "message": "User already exists"
+        }
+
+    fake_db[user.username] = user.password
 
     return {
-        "message": "User created successfully",
-        "email": user.email,
-        "hashed_password": hashed_password
+        "message": "Signup successful"
     }
 
 @router.post("/login")
-def login(user: UserLogin):
+def login(user: User):
 
-    token = create_access_token(
-        data={"sub": user.email}
-    )
+    if fake_db.get(user.username) != user.password:
+        return {
+            "message": "Invalid credentials"
+        }
 
     return {
-        "access_token": token,
-        "token_type": "bearer"
+        "access_token": "securemind-token"
     }
